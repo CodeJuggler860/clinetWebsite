@@ -1,10 +1,17 @@
-"use client"
+import { useState, useEffect, useRef } from "react"
 
-import { useState } from "react"
-
-const FAQs = ({id}) => {
+const FAQs = ({ id }) => {
   const [activeCategory, setActiveCategory] = useState("general")
   const [openFAQ, setOpenFAQ] = useState(null)
+  const [visibleFAQs, setVisibleFAQs] = useState(new Set())
+  const [isHeaderVisible, setIsHeaderVisible] = useState(false)
+  const [isStatsVisible, setIsStatsVisible] = useState(false)
+  const [isCtaVisible, setIsCtaVisible] = useState(false)
+
+  const headerRef = useRef(null)
+  const statsRef = useRef(null)
+  const ctaRef = useRef(null)
+  const faqRefs = useRef([])
 
   const categories = [
     { id: "general", name: "General Inquiries", icon: "❓", gradient: "from-purple-400 to-pink-500" },
@@ -115,8 +122,63 @@ const FAQs = ({id}) => {
     setOpenFAQ(openFAQ === faqId ? null : faqId)
   }
 
+  // Intersection Observer for FAQ items
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.3,
+      rootMargin: "50px 0px -50px 0px",
+    }
+
+    const handleIntersection = (entries) => {
+      entries.forEach((entry) => {
+        const index = Number.parseInt(entry.target.dataset.index)
+        if (entry.isIntersecting) {
+          setVisibleFAQs((prev) => new Set([...prev, index]))
+        }
+      })
+    }
+
+    const observer = new IntersectionObserver(handleIntersection, observerOptions)
+
+    faqRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref)
+    })
+
+    // Observe other sections
+    const sectionsObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const isVisible = entry.isIntersecting
+          if (entry.target === headerRef.current) {
+            setIsHeaderVisible(isVisible)
+          } else if (entry.target === statsRef.current) {
+            setIsStatsVisible(isVisible)
+          } else if (entry.target === ctaRef.current) {
+            setIsCtaVisible(isVisible)
+          }
+        })
+      },
+      { threshold: 0.3, rootMargin: "50px" },
+    )
+
+    if (headerRef.current) sectionsObserver.observe(headerRef.current)
+    if (statsRef.current) sectionsObserver.observe(statsRef.current)
+    if (ctaRef.current) sectionsObserver.observe(ctaRef.current)
+
+    return () => {
+      observer.disconnect()
+      sectionsObserver.disconnect()
+    }
+  }, [activeCategory])
+
+  // Reset visible FAQs when category changes
+  useEffect(() => {
+    setVisibleFAQs(new Set())
+    faqRefs.current = []
+  }, [activeCategory])
+
   return (
-    <div id={id}className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-900 relative overflow-hidden py-20">
+    <div id={id} className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-900 relative overflow-hidden py-20">
       {/* Enhanced Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-900/15 via-indigo-900/10 to-transparent"></div>
@@ -134,13 +196,17 @@ const FAQs = ({id}) => {
         ></div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-8 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 relative z-10">
         {/* FAQs Header Section */}
-        <div className="text-center mb-20">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent animate-pulse">
+        <div
+          ref={headerRef}
+          className={`text-center mb-20 transition-all duration-1000 ${isHeaderVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            }`}
+        >
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent animate-pulse">
             Frequently Asked Questions
           </h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
             Find answers to common questions about our services, processes, and technical capabilities
           </p>
           <div className="w-32 h-1 bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 mx-auto rounded-full"></div>
@@ -152,19 +218,17 @@ const FAQs = ({id}) => {
             <button
               key={category.id}
               onClick={() => setActiveCategory(category.id)}
-              className={`group px-8 py-4 bg-gray-900/40 backdrop-blur-lg border rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center space-x-3 ${
-                activeCategory === category.id
+              className={`group px-8 py-4 bg-gray-900/40 backdrop-blur-lg border rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center space-x-3 ${activeCategory === category.id
                   ? `border-${category.gradient.split(" ")[1].replace("to-", "").replace("-500", "-400")}/60 bg-${category.gradient.split(" ")[1].replace("to-", "").replace("-500", "-500")}/10 shadow-lg shadow-${category.gradient.split(" ")[1].replace("to-", "").replace("-500", "-500")}/20`
                   : "border-gray-700/50 hover:border-purple-400/60 hover:bg-purple-500/10"
-              }`}
+                }`}
             >
               <span className="text-2xl">{category.icon}</span>
               <span
-                className={`font-medium transition-colors duration-300 ${
-                  activeCategory === category.id
+                className={`font-medium transition-colors duration-300 ${activeCategory === category.id
                     ? `text-${category.gradient.split(" ")[1].replace("to-", "").replace("-500", "-200")}`
                     : "text-gray-300 group-hover:text-purple-200"
-                }`}
+                  }`}
               >
                 {category.name}
               </span>
@@ -172,60 +236,74 @@ const FAQs = ({id}) => {
           ))}
         </div>
 
-        {/* FAQ Items */}
+        {/* FAQ Items with Scroll Animations */}
         <div className="space-y-6 mb-20">
-          {faqData[activeCategory].map((faq, index) => (
-            <div
-              key={faq.id}
-              className="group bg-gray-900/40 backdrop-blur-lg border border-gray-700/50 rounded-2xl overflow-hidden hover:border-purple-400/30 transition-all duration-500 hover:shadow-xl hover:shadow-purple-500/10"
-            >
-              <button
-                onClick={() => toggleFAQ(faq.id)}
-                className="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-gray-800/30 transition-all duration-300"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-400/20 to-blue-500/20 rounded-full flex items-center justify-center group-hover:bg-gradient-to-br group-hover:from-purple-400/30 group-hover:to-blue-500/30 transition-all duration-300 group-hover:scale-110">
-                    <span className="text-purple-400 font-bold text-sm">{String(index + 1).padStart(2, "0")}</span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-white group-hover:text-purple-200 transition-colors duration-300">
-                    {faq.question}
-                  </h3>
-                </div>
-                <div
-                  className={`w-8 h-8 bg-gradient-to-br from-purple-400/20 to-blue-500/20 rounded-full flex items-center justify-center transition-all duration-300 ${
-                    openFAQ === faq.id ? "rotate-180 bg-gradient-to-br from-purple-400/30 to-blue-500/30" : ""
-                  }`}
-                >
-                  <svg
-                    className="w-4 h-4 text-purple-400 transition-colors duration-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </button>
+          {faqData[activeCategory].map((faq, index) => {
+            const isVisible = visibleFAQs.has(index)
+            const animationClass = isVisible
+              ? "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 translate-y-8 scale-95"
 
-              {/* Expandable Answer */}
+            return (
               <div
-                className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                  openFAQ === faq.id ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-                }`}
+                key={faq.id}
+                ref={(el) => (faqRefs.current[index] = el)}
+                data-index={index}
+                className={`group bg-gray-900/40 backdrop-blur-lg border border-gray-700/50 rounded-2xl overflow-hidden hover:border-purple-400/30 transition-all duration-700 hover:shadow-xl hover:shadow-purple-500/10 ${animationClass}`}
+                style={{
+                  transitionDelay: `${index * 150}ms`,
+                }}
               >
-                <div className="px-8 pb-6">
-                  <div className="pl-14">
-                    <div className="w-full h-px bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-transparent mb-4"></div>
-                    <p className="text-gray-300 leading-relaxed">{faq.answer}</p>
+                <button
+                  onClick={() => toggleFAQ(faq.id)}
+                  className="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-gray-800/30 transition-all duration-300"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-400/20 to-blue-500/20 rounded-full flex items-center justify-center group-hover:bg-gradient-to-br group-hover:from-purple-400/30 group-hover:to-blue-500/30 transition-all duration-300 group-hover:scale-110">
+                      <span className="text-purple-400 font-bold text-sm">{String(index + 1).padStart(2, "0")}</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-white group-hover:text-purple-200 transition-colors duration-300">
+                      {faq.question}
+                    </h3>
+                  </div>
+                  <div
+                    className={`w-8 h-8 bg-gradient-to-br from-purple-400/20 to-blue-500/20 rounded-full flex items-center justify-center transition-all duration-300 ${openFAQ === faq.id ? "rotate-180 bg-gradient-to-br from-purple-400/30 to-blue-500/30" : ""
+                      }`}
+                  >
+                    <svg
+                      className="w-4 h-4 text-purple-400 transition-colors duration-300"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </button>
+
+                {/* Expandable Answer */}
+                <div
+                  className={`overflow-hidden transition-all duration-500 ease-in-out ${openFAQ === faq.id ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                    }`}
+                >
+                  <div className="px-8 pb-6">
+                    <div className="pl-14">
+                      <div className="w-full h-px bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-transparent mb-4"></div>
+                      <p className="text-gray-300 leading-relaxed">{faq.answer}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Quick Stats */}
-        <div className="grid md:grid-cols-3 gap-6 mb-20">
+        <div
+          ref={statsRef}
+          className={`grid md:grid-cols-3 gap-6 mb-20 transition-all duration-1000 ${isStatsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            }`}
+        >
           {[
             { number: "24/7", label: "Support Available", icon: "🕒", gradient: "from-green-400 to-emerald-500" },
             { number: "< 2hrs", label: "Response Time", icon: "⚡", gradient: "from-blue-400 to-indigo-500" },
@@ -234,6 +312,7 @@ const FAQs = ({id}) => {
             <div
               key={index}
               className="group text-center bg-gray-900/40 backdrop-blur-lg border border-gray-700/50 rounded-2xl p-6 hover:border-purple-400/60 hover:bg-gray-800/50 transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20 transform hover:-translate-y-1"
+              style={{ transitionDelay: `${index * 100}ms` }}
             >
               <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-300">{stat.icon}</div>
               <h3
@@ -247,7 +326,11 @@ const FAQs = ({id}) => {
         </div>
 
         {/* Contact Support Section */}
-        <div className="text-center mb-16">
+        <div
+          ref={ctaRef}
+          className={`text-center mb-16 transition-all duration-1000 ${isCtaVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            }`}
+        >
           <div className="bg-gray-900/40 backdrop-blur-lg border border-gray-700/50 rounded-3xl p-12 hover:border-purple-400/30 transition-all duration-500 hover:shadow-xl hover:shadow-purple-500/10 relative overflow-hidden">
             {/* Background Pattern */}
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/2 via-blue-500/2 to-indigo-500/2 opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
@@ -265,14 +348,14 @@ const FAQs = ({id}) => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="#contact">
-                <button className="group bg-gradient-to-r from-purple-500 to-blue-500 text-white px-8 py-3 rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 font-medium">
-                  <span className="group-hover:text-purple-100 transition-colors duration-300">Contact Support</span>
-                </button>
+                  <button className="group bg-gradient-to-r from-purple-500 to-blue-500 text-white px-8 py-3 rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 font-medium">
+                    <span className="group-hover:text-purple-100 transition-colors duration-300">Contact Support</span>
+                  </button>
                 </a>
                 <a href="#contact">
-                <button className="group bg-transparent border border-gray-500 text-white px-8 py-3 rounded-lg hover:border-purple-400 hover:bg-purple-500/10 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 font-medium">
-                  <span className="group-hover:text-purple-200 transition-colors duration-300">Schedule a Call</span>
-                </button>
+                  <button className="group bg-transparent border border-gray-500 text-white px-8 py-3 rounded-lg hover:border-purple-400 hover:bg-purple-500/10 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 font-medium">
+                    <span className="group-hover:text-purple-200 transition-colors duration-300">Schedule a Call</span>
+                  </button>
                 </a>
               </div>
             </div>

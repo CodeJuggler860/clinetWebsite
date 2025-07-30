@@ -1,6 +1,4 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 
 const Contact = ({id}) => {
   const [formData, setFormData] = useState({
@@ -11,6 +9,22 @@ const Contact = ({id}) => {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
+
+  // Animation states
+  const [isHeaderVisible, setIsHeaderVisible] = useState(false)
+  const [isFormVisible, setIsFormVisible] = useState(false)
+  const [isContactInfoVisible, setIsContactInfoVisible] = useState(false)
+  const [isSocialVisible, setIsSocialVisible] = useState(false)
+  const [isLocationVisible, setIsLocationVisible] = useState(false)
+  const [isCtaVisible, setIsCtaVisible] = useState(false)
+
+  // Refs for intersection observer
+  const headerRef = useRef(null)
+  const formRef = useRef(null)
+  const contactInfoRef = useRef(null)
+  const socialRef = useRef(null)
+  const locationRef = useRef(null)
+  const ctaRef = useRef(null)
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -39,11 +53,49 @@ const Contact = ({id}) => {
     }
   }
 
+  // Intersection Observer setup
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.2,
+      rootMargin: "50px 0px -50px 0px",
+    }
+
+    const handleIntersection = (entries) => {
+      entries.forEach((entry) => {
+        const isVisible = entry.isIntersecting
+
+        if (entry.target === headerRef.current) {
+          setIsHeaderVisible(isVisible)
+        } else if (entry.target === formRef.current) {
+          setIsFormVisible(isVisible)
+        } else if (entry.target === contactInfoRef.current) {
+          setIsContactInfoVisible(isVisible)
+        } else if (entry.target === socialRef.current) {
+          setIsSocialVisible(isVisible)
+        } else if (entry.target === locationRef.current) {
+          setIsLocationVisible(isVisible)
+        } else if (entry.target === ctaRef.current) {
+          setIsCtaVisible(isVisible)
+        }
+      })
+    }
+
+    const observer = new IntersectionObserver(handleIntersection, observerOptions)
+
+    // Observe all sections
+    const refs = [headerRef, formRef, contactInfoRef, socialRef, locationRef, ctaRef]
+    refs.forEach((ref) => {
+      if (ref.current) observer.observe(ref.current)
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
   const contactInfo = [
     {
       type: "Phone",
       value: "+92 321 161 4706",
-      href: "tel:+92321614706",
+      href: "tel:92321614706",
       icon: (
         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
@@ -151,13 +203,18 @@ const Contact = ({id}) => {
         ></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
         {/* Contact Header Section */}
-        <div className="text-center mb-20">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent animate-pulse">
+        <div
+          ref={headerRef}
+          className={`text-center mb-20 transition-all duration-1000 ${
+            isHeaderVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          }`}
+        >
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent animate-pulse">
             Get In Touch
           </h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
             Ready to transform your business with cutting-edge technology? Let's discuss your project and bring your
             vision to life.
           </p>
@@ -166,7 +223,12 @@ const Contact = ({id}) => {
 
         <div className="grid lg:grid-cols-2 gap-16 mb-20">
           {/* Contact Form */}
-          <div className="bg-gray-900/40 backdrop-blur-lg border border-gray-700/50 rounded-3xl p-8 hover:border-purple-400/30 transition-all duration-500 hover:shadow-xl hover:shadow-purple-500/10">
+          <div
+            ref={formRef}
+            className={`bg-gray-900/40 backdrop-blur-lg border border-gray-700/50 rounded-3xl p-8 hover:border-purple-400/30 transition-all duration-1000 hover:shadow-xl hover:shadow-purple-500/10 ${
+              isFormVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-16"
+            }`}
+          >
             <div className="mb-8">
               <h3 className="text-2xl font-bold text-white mb-4 bg-gradient-to-r from-purple-200 to-blue-200 bg-clip-text text-transparent">
                 Send us a Message
@@ -332,7 +394,12 @@ const Contact = ({id}) => {
           {/* Contact Information & Map */}
           <div className="space-y-8">
             {/* Contact Information */}
-            <div className="bg-gray-900/40 backdrop-blur-lg border border-gray-700/50 rounded-3xl p-8 hover:border-purple-400/30 transition-all duration-500 hover:shadow-xl hover:shadow-purple-500/10">
+            <div
+              ref={contactInfoRef}
+              className={`bg-gray-900/40 backdrop-blur-lg border border-gray-700/50 rounded-3xl p-8 hover:border-purple-400/30 transition-all duration-1000 hover:shadow-xl hover:shadow-purple-500/10 ${
+                isContactInfoVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-16"
+              }`}
+            >
               <h3 className="text-2xl font-bold text-white mb-6 bg-gradient-to-r from-purple-200 to-blue-200 bg-clip-text text-transparent">
                 Contact Information
               </h3>
@@ -341,6 +408,7 @@ const Contact = ({id}) => {
                   <div
                     key={index}
                     className="group flex items-center space-x-4 hover:translate-x-2 transition-transform duration-300"
+                    style={{ transitionDelay: `${index * 100}ms` }}
                   >
                     <div
                       className={`w-12 h-12 bg-gradient-to-br ${info.gradient}/20 rounded-full flex items-center justify-center group-hover:bg-gradient-to-br group-hover:${info.gradient}/30 transition-all duration-300 group-hover:scale-110 shadow-lg shadow-${info.gradient.split(" ")[1].replace("to-", "").replace("-500", "-500")}/20`}
@@ -366,7 +434,12 @@ const Contact = ({id}) => {
             </div>
 
             {/* Social Media Links */}
-            <div className="bg-gray-900/40 backdrop-blur-lg border border-gray-700/50 rounded-3xl p-8 hover:border-purple-400/30 transition-all duration-500 hover:shadow-xl hover:shadow-purple-500/10">
+            <div
+              ref={socialRef}
+              className={`bg-gray-900/40 backdrop-blur-lg border border-gray-700/50 rounded-3xl p-8 hover:border-purple-400/30 transition-all duration-1000 hover:shadow-xl hover:shadow-purple-500/10 ${
+                isSocialVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-16"
+              }`}
+            >
               <h3 className="text-2xl font-bold text-white mb-6 bg-gradient-to-r from-purple-200 to-blue-200 bg-clip-text text-transparent">
                 Follow Us
               </h3>
@@ -375,7 +448,8 @@ const Contact = ({id}) => {
                   <a
                     key={index}
                     href={social.href}
-                    className={`group flex items-center space-x-3 p-4 bg-gray-800/30 rounded-xl border border-gray-700/30 hover:border-${social.gradient.split(" ")[1].replace("to-", "").replace("-600", "-400")}/60 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-${social.gradient.split(" ")[1].replace("to-", "").replace("-600", "-500")}/20 hover:-translate-y-1`}
+                    className={`group flex items-center space-x-3 p-4 bg-gray-800/30 rounded-xl border border-gray-700/30 hover:border-${social.gradient.split(" ")[1].replace("to-", "").replace("-600", "-400")}/60 transition-all duration-500 hover:scale-105 hover:shadow-lg hover:shadow-${social.gradient.split(" ")[1].replace("to-", "").replace("-600", "-500")}/20 hover:-translate-y-1`}
+                    style={{ transitionDelay: `${index * 100}ms` }}
                   >
                     <div
                       className={`text-gray-400 group-hover:text-${social.gradient.split(" ")[1].replace("to-", "").replace("-600", "-300")} transition-colors duration-300`}
@@ -391,27 +465,16 @@ const Contact = ({id}) => {
             </div>
 
             {/* Map Integration */}
-            <div className="bg-gray-900/40 backdrop-blur-lg border border-gray-700/50 rounded-3xl p-8 hover:border-purple-400/30 transition-all duration-500 hover:shadow-xl hover:shadow-purple-500/10">
+            <div
+              ref={locationRef}
+              className={`bg-gray-900/40 backdrop-blur-lg border border-gray-700/50 rounded-3xl p-8 hover:border-purple-400/30 transition-all duration-1000 hover:shadow-xl hover:shadow-purple-500/10 ${
+                isLocationVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+              }`}
+            >
               <h3 className="text-2xl font-bold text-white mb-6 bg-gradient-to-r from-purple-200 to-blue-200 bg-clip-text text-transparent">
                 Our Location
               </h3>
               <div className="relative h-64 rounded-2xl overflow-hidden bg-gray-800/50 border border-gray-600/30">
-                {/* Placeholder for map - replace with actual map integration */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-400/20 to-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    <p className="text-white font-semibold mb-2">Karachi, Pakistan</p>
-                    <p className="text-gray-400 text-sm">Interactive map coming soon</p>
-                  </div>
-                </div>
                 {/* Add actual map integration here */}
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14457348.09911013!2d61.23559385845934!3d30.37532120349021!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3eb33e758d20fa01%3A0xd0bfa7e5739a3b5e!2sKarachi%2C%20Karachi%20City%2C%20Sindh%2C%20Pakistan!5e0!3m2!1sen!2s!4v1703123456789!5m2!1sen!2s"
@@ -434,7 +497,12 @@ const Contact = ({id}) => {
         </div>
 
         {/* Additional Contact Options */}
-        <div className="text-center">
+        <div
+          ref={ctaRef}
+          className={`text-center transition-all duration-1000 ${
+            isCtaVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          }`}
+        >
           <div className="bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-indigo-500/10 backdrop-blur-lg border border-gray-700/50 rounded-3xl p-12 hover:border-purple-400/50 transition-all duration-500 hover:shadow-xl hover:shadow-purple-500/20">
             <div className="grid md:grid-cols-3 gap-8">
               <div className="text-center group">
