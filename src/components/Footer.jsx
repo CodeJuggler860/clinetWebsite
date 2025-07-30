@@ -1,5 +1,3 @@
-"use client"
-
 const Footer = () => {
   const currentYear = new Date().getFullYear()
 
@@ -92,7 +90,7 @@ const Footer = () => {
           <div className="lg:col-span-2">
             <div className="mb-8">
               <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent">
-                Client
+                Clinet
               </h3>
               <p className="text-gray-300 leading-relaxed mb-6 max-w-md">
                 A Pakistan-based technology company driven by passionate professionals, delivering smart, scalable, and
